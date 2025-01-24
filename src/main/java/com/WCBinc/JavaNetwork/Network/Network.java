@@ -1,9 +1,9 @@
-package src.Network;
+package com.WCBinc.JavaNetwork.Network;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import src.MnistReader.MnistMatrix;
+import com.WCBinc.JavaNetwork.MnistReader.MnistMatrix;
 
 public class Network {
 

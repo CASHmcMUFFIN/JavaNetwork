@@ -1,10 +1,10 @@
-package src.Main;
+package com.WCBinc.JavaNetwork.Main;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import src.MnistReader.MnistDataReader;
-import src.MnistReader.MnistMatrix;
-import src.Network.Network;
+import com.WCBinc.JavaNetwork.MnistReader.MnistDataReader;
+import com.WCBinc.JavaNetwork.MnistReader.MnistMatrix;
+//import com.WCBinc.JavaNetwork.Network.Network;
 
 public class Main {
 
@@ -14,17 +14,19 @@ public class Main {
         l.add(2);
         l.add(1);
 
-        Network n = new Network(l);
+        //Network n = new Network(l);
 
         MnistDataReader r = new MnistDataReader();
 
         MnistMatrix[] mat;
 
         try {
-            mat = r.readData("C:\\Users\\Owner\\Documents\\neural net\\data\\train-images (1).idx3-ubyte", "C:\\Users\\Owner\\Documents\\neural net\\data\\train-labels.idx1-ubyte");
+            mat = r.readData("C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\train-images.idx3-ubyte", "C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\train-labels.idx1-ubyte");
         } catch (IOException ex) {
             mat = null;
         }
+
+        System.out.println(mat);
 
     }
 }

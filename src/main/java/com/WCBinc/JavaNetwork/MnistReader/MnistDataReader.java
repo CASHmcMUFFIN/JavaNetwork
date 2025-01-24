@@ -1,4 +1,4 @@
-package src.MnistReader;
+package com.WCBinc.JavaNetwork.MnistReader;
 
 import java.io.*;
 
