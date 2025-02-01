@@ -1,0 +1,4 @@
+com\WCBinc\JavaNetwork\Main\Main.class
+com\WCBinc\JavaNetwork\MnistReader\MnistDataReader.class
+com\WCBinc\JavaNetwork\MnistReader\MnistMatrix.class
+com\WCBinc\JavaNetwork\Network\Network.class
