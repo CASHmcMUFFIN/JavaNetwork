@@ -42,4 +42,5 @@ public class MnistDataReader {
         labelInputStream.close();
         return data;
     }
+
 }
