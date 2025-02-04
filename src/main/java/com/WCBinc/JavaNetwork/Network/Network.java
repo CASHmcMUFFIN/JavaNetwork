@@ -1,5 +1,6 @@
 package com.WCBinc.JavaNetwork.Network;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import org.ejml.data.DMatrixRMaj;
@@ -26,17 +27,21 @@ public class Network {
 
         for (int i = 1; i < this.numLayers; i++) {
             DMatrixRMaj tempRandom = new DMatrixRMaj(sizes[i],1);
+            double scale = 1.0 / Math.sqrt(sizes[i]);
+
             for (int j = 0; j < sizes[i]; j++) {
-                tempRandom.set(j, random.nextGaussian());
+                tempRandom.set(j, random.nextGaussian() * scale);
             }
             biases[i - 1] = tempRandom;
         }
 
         for (int i = 0; i < this.numLayers - 1; i++) {
             DMatrixRMaj tempRandom = new DMatrixRMaj(sizes[i + 1], sizes[i]);
+            double scale = 1.0 / Math.sqrt(sizes[i]);
+
             for (int j = 0; j < sizes[i + 1]; j++) {
                 for (int k = 0; k < sizes[i]; k++) {
-                    tempRandom.set(j, k, random.nextGaussian());
+                    tempRandom.set(j, k, random.nextGaussian() * scale);
                 }
 
             }
@@ -46,13 +51,14 @@ public class Network {
     }
 
     private double sigmoid(double n) {
-        //return 1 / (1 + Math.exp(-n));
-        return Math.max(n, 0);
+        return 1 / (1 + Math.exp(-n));
+        //return Math.max(n, 0);
     }
 
     private double sigmoidPrime(double n) {
-        //return sigmoid(n)*(1-sigmoid(n));
-        return n > 0 ? 1 : 0;
+        double sig = sigmoid(n);
+        return sig*(1-sig);
+        //return n > 0 ? 1 : 0;
     }
 
     private DMatrixRMaj elementwiseSigmoid(DMatrixRMaj mat) {
@@ -129,7 +135,7 @@ public class Network {
 
     private int max(DMatrixRMaj mat) {
         int index = 0;
-        double max = 0;
+        double max = mat.get(0,0);
         for (int i = 0; i < mat.getNumRows(); i++) {
             if (mat.get(i, 0) > max) {
                 max = mat.get(i, 0);
@@ -164,12 +170,13 @@ public class Network {
 
     public void SGD(double eta, int miniBatchSize, int epochs, DMatrixRMaj[][] trainingData, DMatrixRMaj[][] testData) {
         for (int i = 0; i < epochs; i++) {
-            System.out.println("Epoch: " + i);
+            System.out.println("Epoch: " + (i + 1));
 
             shuffle(trainingData);
 
             DMatrixRMaj[][][] miniBatches = turnIntoMinibatches(trainingData, miniBatchSize);
 
+            //displayImage(miniBatches[0][0][0], 28, 28);
             int c = 1;
             for (DMatrixRMaj[][] miniBatch : miniBatches) {
                 updateMinibatch(eta, miniBatch);
@@ -190,7 +197,7 @@ public class Network {
             System.out.println("Total correct: " + totalCorrect + "/" + testData.length);
             System.out.println();
 
-            /*int totalCorrect2 = 0;
+            int totalCorrect2 = 0;
             for (int j = 0; j < trainingData.length; j++) {
                 if (max(trainingData[j][1]) == max(feedForward(trainingData[j][0]))) {
                     totalCorrect2++;
@@ -198,33 +205,29 @@ public class Network {
             }
             System.out.println("Percent correct: " + ((double)totalCorrect2/(double)trainingData.length) * 100 + "%");
             System.out.println("Total correct: " + totalCorrect2 + "/" + trainingData.length);
-            System.out.println();*/
+            System.out.println();
         }
     }
 
     private DMatrixRMaj[][][] turnIntoMinibatches(DMatrixRMaj[][] mat, int minibatchSize) {
-        int numMinibatches = (int) Math.ceil((double) mat.length / minibatchSize);
-        DMatrixRMaj[][][] minibatches = new DMatrixRMaj[numMinibatches][minibatchSize][2];
+        int numBatches = (mat.length + minibatchSize - 1) / minibatchSize;
+        DMatrixRMaj[][][] minibatches = new DMatrixRMaj[numBatches][][];
 
-        for (int i = 0; i < numMinibatches; i++) {
-            for (int j = 0; j < minibatchSize; j++) {
-                int index = i * minibatchSize + j;
-                minibatches[i][j] = mat[index];
-            }
+        for (int i = 0; i < numBatches; i++) {
+            int start = i * minibatchSize;
+            int end = Math.min(start + minibatchSize, mat.length);
+            minibatches[i] = Arrays.copyOfRange(mat, start, end);
         }
-
         return minibatches;
     }
 
     public void shuffle(DMatrixRMaj[][] mat) {
-        for (int i = 0; i < mat.length * 100; i++) {
-            int r1 = random.nextInt(mat.length);
-            int r2 = random.nextInt(mat.length);
+        for (int i = mat.length - 1; i > 0; i--) {
+            int r = random.nextInt(i);
 
-            DMatrixRMaj[] t = mat[r1];
-
-            mat[r1] = mat[r2];
-            mat[r2] = t;
+            DMatrixRMaj[] t = mat[i];
+            mat[i] = mat[r];
+            mat[r] = t;
         }
     }
 
@@ -302,7 +305,7 @@ public class Network {
         }
 
         DMatrixRMaj t = new DMatrixRMaj();
-        layerError[numLayers - 2] = hadamard(CommonOps_DDRM.subtract(activations[numLayers - 1], y, t), elementwiseSigmoidPrime(zs[numLayers - 2]));
+        layerError[numLayers - 2] = CommonOps_DDRM.subtract(activations[numLayers - 1], y, t);
 
         VectorVectorMult_DDRM.outerProd(layerError[numLayers - 2], activations[numLayers - 2],  errorW[numLayers - 2]);
 
@@ -313,9 +316,8 @@ public class Network {
             DMatrixRMaj t3 = new DMatrixRMaj();
 
             CommonOps_DDRM.transpose(weights[i - 1], t2);
-            CommonOps_DDRM.mult(t2, layerError[i - 1], t3);
-
-            layerError[i - 2] = hadamard(t3, elementwiseSigmoidPrime(activations[i - 1]));
+            layerError[i - 2] = hadamard(CommonOps_DDRM.mult(t2, layerError[i - 1], t3), elementwiseSigmoidPrime(zs[i - 2]));
+            //CommonOps_DDRM.mult(t2, layerError[i - 1], layerError[i - 2]);
 
             errorB[i - 2] = layerError[i - 2];
             VectorVectorMult_DDRM.outerProd(layerError[i - 2], activations[i - 2], errorW[i - 2]);
@@ -327,4 +329,20 @@ public class Network {
 
         return val;
     }
+    public void displayImage(DMatrixRMaj mat, int height, int width) {
+        int c = 0;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (mat.get(c,0) > 0) {
+                    System.out.print("#");
+                } else {
+                    System.out.print(" ");
+                }
+                c++;
+            }
+            System.out.println();
+        }
+
+    }
 }
+

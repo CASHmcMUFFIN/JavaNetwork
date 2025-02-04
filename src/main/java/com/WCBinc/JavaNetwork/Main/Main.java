@@ -1,8 +1,7 @@
 package com.WCBinc.JavaNetwork.Main;
 
 import java.io.IOException;
-import java.util.Random;
-
+import java.util.Arrays;
 
 import com.WCBinc.JavaNetwork.MnistReader.MnistConverter;
 import com.WCBinc.JavaNetwork.MnistReader.MnistDataReader;
@@ -23,7 +22,8 @@ public class Main {
         MnistMatrix[] mat;
 
         try {
-            mat = reader.readData("C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\train-images.idx3-ubyte", "C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\train-labels.idx1-ubyte");
+            mat = reader.readData("C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\" +
+                    "train-images.idx3-ubyte", "C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\train-labels.idx1-ubyte");
         } catch (IOException ex) {
             mat = null;
         }
@@ -31,7 +31,8 @@ public class Main {
         MnistMatrix[] test;
 
         try {
-            test = reader.readData("C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\t10k-images.idx3-ubyte", "C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\t10k-labels.idx1-ubyte");
+            test = reader.readData("C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data" +
+                    "\\t10k-images.idx3-ubyte", "C:\\Users\\Owner\\Documents\\github\\JavaNetwork\\JavaNetwork\\data\\t10k-labels.idx1-ubyte");
         } catch (IOException e) {
             test = null;
         }
@@ -50,6 +51,10 @@ public class Main {
 
         System.out.println();
 
-        n.SGD(3, 10, 300, inputs, testData);
+        DMatrixRMaj[][] valid = Arrays.copyOfRange(inputs, 50000, 60000);
+        DMatrixRMaj[][] realinp = Arrays.copyOfRange(inputs, 0, 50000);
+
+
+        n.SGD(0.002, 10, 300, realinp, valid);
     }
 }
