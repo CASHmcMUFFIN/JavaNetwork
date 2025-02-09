@@ -291,7 +291,7 @@ public class Network {
             //displayImage(miniBatches[0][0][0], 28, 28);
             int c = 1;
             for (DMatrixRMaj[][] miniBatch : miniBatches) {
-                updateMinibatch(eta, miniBatch);
+                updateMinibatchMatrix(eta, miniBatch);
                 if (c % 1000 == 0) {
                     System.out.println(c + "/" + miniBatches.length);
                 }
@@ -352,6 +352,7 @@ public class Network {
         DMatrixRMaj[] nablaB = new DMatrixRMaj[numLayers - 1];
         for (int i = 0; i < biases.length; i++) {
             nablaB[i] = new DMatrixRMaj(biases[i].getNumRows(), biases[i].getNumCols());
+            System.out.println("Cash Sucks!");
         }
 
         for (int i = 0; i < miniBatch.length; i++) {

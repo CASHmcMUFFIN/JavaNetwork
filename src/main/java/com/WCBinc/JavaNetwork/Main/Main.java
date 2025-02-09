@@ -12,7 +12,7 @@ import org.ejml.data.DMatrixRMaj;
 public class Main {
 
     public static void main(String[] args) {
-        int[] l = {784, 1000, 10};
+        int[] l = {784, 30, 10};
 
         Network n = new Network(l);
 
@@ -55,7 +55,7 @@ public class Main {
         DMatrixRMaj[][] realinp = Arrays.copyOfRange(inputs, 0, 50000);
 
         long time = System.currentTimeMillis();
-        n.SGD(0.002, 10, 3, realinp, valid);
+        n.SGD(0.002, 10, 30, realinp, valid);
         System.out.println(System.currentTimeMillis() - time);
     }
 }
