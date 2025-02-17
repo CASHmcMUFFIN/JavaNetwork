@@ -10,14 +10,12 @@ import com.WCBinc.JavaNetwork.Network.Network;
 import org.ejml.data.DMatrixRMaj;
 
 public class Main {
-
     public static void main(String[] args) {
-        int[] l = {784, 30, 10};
+        int[] l = {784, 100, 10};
 
         Network n = new Network(l);
 
         MnistDataReader reader = new MnistDataReader();
-        MnistConverter converter = new MnistConverter();
 
         MnistMatrix[] mat;
 
@@ -36,18 +34,18 @@ public class Main {
         } catch (IOException e) {
             test = null;
         }
-
         DMatrixRMaj[][] inputs = new DMatrixRMaj[mat.length][2];
 
         for (int i = 0; i < mat.length; i++) {
-            inputs[i] = converter.convertToDMat(mat[i]);
+            inputs[i] = MnistConverter.convertToDMat(mat[i]);
         }
 
         DMatrixRMaj[][] testData = new DMatrixRMaj[test.length][2];
 
         for (int i = 0; i < test.length; i++) {
-            testData[i] = converter.convertToDMat(test[i]);
+            testData[i] = MnistConverter.convertToDMat(test[i]);
         }
+
 
         System.out.println();
 
@@ -55,7 +53,8 @@ public class Main {
         DMatrixRMaj[][] realinp = Arrays.copyOfRange(inputs, 0, 50000);
 
         long time = System.currentTimeMillis();
-        n.SGD(0.002, 10, 30, realinp, valid);
+        //n.SGD(1,0.01, 0.0015, 10, 60, realinp, valid);
+        n.SGD(0,100, 0.1, 10, 60, realinp, valid);
         System.out.println(System.currentTimeMillis() - time);
     }
 }

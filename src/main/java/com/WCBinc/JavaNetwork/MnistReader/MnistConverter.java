@@ -3,7 +3,11 @@ package com.WCBinc.JavaNetwork.MnistReader;
 import org.ejml.data.DMatrixRMaj;
 
 public class MnistConverter {
-    public DMatrixRMaj[] convertToDMat(MnistMatrix mat) {
+    private MnistConverter() {
+
+    }
+
+    public static DMatrixRMaj[] convertToDMat(MnistMatrix mat) {
         double[] data = new double[mat.getNumberOfRows() * mat.getNumberOfColumns()];
 
         DMatrixRMaj dmat = new DMatrixRMaj(mat.getNumberOfRows() * mat.getNumberOfColumns(), 1);
@@ -11,7 +15,7 @@ public class MnistConverter {
         int c = 0;
         for (int i = 0; i < mat.getNumberOfRows(); i++) {
             for (int j = 0; j < mat.getNumberOfColumns(); j++) {
-                dmat.set(c, mat.getValue(i, j));
+                dmat.set(c, (double) mat.getValue(i, j) / 255.0);
                 c++;
             }
         }
@@ -27,7 +31,7 @@ public class MnistConverter {
         return full;
     }
 
-    private DMatrixRMaj vectorize(int n) {
+    private static DMatrixRMaj vectorize(int n) {
         DMatrixRMaj mat = new DMatrixRMaj(10, 1);
 
         mat.zero();
