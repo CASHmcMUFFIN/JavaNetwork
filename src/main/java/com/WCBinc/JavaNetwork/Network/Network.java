@@ -3,6 +3,7 @@ package com.WCBinc.JavaNetwork.Network;
 import java.util.Arrays;
 import java.util.Random;
 
+import com.WCBinc.JavaNetwork.Network.Functions.NeuronFunction;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 
@@ -56,7 +57,7 @@ public class Network {
         return biases;
     }
 
-    public void SGD(int regularizationType, double lambda, double eta, int miniBatchSize, int epochs, DMatrixRMaj[][] trainingData, DMatrixRMaj[][] testData) {
+    public void SGD(NetworkFunctions function, boolean trainingAccuracyDisplay, int regularizationType, double lambda, double eta, int miniBatchSize, int epochs, DMatrixRMaj[][] trainingData, DMatrixRMaj[][] testData) {
         for (int i = 0; i < epochs; i++) {
             System.out.println("Epoch: " + (i + 1));
 
@@ -67,7 +68,7 @@ public class Network {
             //displayImage(miniBatches[0][0][0], 28, 28);
             int c = 1;
             for (DMatrixRMaj[][] miniBatch : miniBatches) {
-                updateMinibatch(regularizationType, lambda, eta, miniBatch, trainingData.length);
+                updateMinibatch(function, regularizationType, lambda, eta, miniBatch, trainingData.length);
                 if (c % 1000 == 0) {
                     System.out.println(c + "/" + miniBatches.length);
                 }
@@ -77,27 +78,28 @@ public class Network {
 
             int totalCorrect = 0;
             for (int j = 0; j < testData.length; j++) {
-                if (max(testData[j][1]) == max(feedForward(testData[j][0]))) {
+                if (max(testData[j][1]) == max(function.feedForward(testData[j][0], numLayers, weights, biases))) {
                     totalCorrect++;
                 }
             }
             System.out.println("Percent correct: " + ((double)totalCorrect/(double)testData.length) * 100 + "%");
             System.out.println("Total correct: " + totalCorrect + "/" + testData.length);
             System.out.println();
-
-            /*int totalCorrect2 = 0;
-            for (int j = 0; j < trainingData.length; j++) {
-                if (max(trainingData[j][1]) == max(feedForward(trainingData[j][0]))) {
-                    totalCorrect2++;
+            if (trainingAccuracyDisplay) {
+                int totalCorrect2 = 0;
+                for (int j = 0; j < trainingData.length; j++) {
+                    if (max(trainingData[j][1]) == max(function.feedForward(trainingData[j][0], numLayers, weights, biases))) {
+                        totalCorrect2++;
+                    }
                 }
+                System.out.println("Percent correct: " + ((double) totalCorrect2 / (double) trainingData.length) * 100 + "%");
+                System.out.println("Total correct: " + totalCorrect2 + "/" + trainingData.length);
+                System.out.println();
             }
-            System.out.println("Percent correct: " + ((double)totalCorrect2/(double)trainingData.length) * 100 + "%");
-            System.out.println("Total correct: " + totalCorrect2 + "/" + trainingData.length);
-            System.out.println();*/
         }
     }
 
-    public void SGD(int regularizationType, double lambda, double eta, int miniBatchSize, int epochs, DMatrixRMaj[][] trainingData) {
+    public void SGD(NetworkFunctions function, boolean trainingAccuracyDisplay, int regularizationType, double lambda, double eta, int miniBatchSize, int epochs, DMatrixRMaj[][] trainingData) {
         for (int i = 0; i < epochs; i++) {
             System.out.println("Epoch: " + (i + 1));
 
@@ -106,16 +108,16 @@ public class Network {
             DMatrixRMaj[][][] miniBatches = turnIntoMinibatches(trainingData, miniBatchSize);
 
             for (DMatrixRMaj[][] miniBatch : miniBatches) {
-                updateMinibatch(regularizationType, lambda, eta, miniBatch, trainingData.length);
+                updateMinibatch(function, regularizationType, lambda, eta, miniBatch, trainingData.length);
             }
         }
     }
 
-    private void updateMinibatch(int regularizationType, double lambda, double eta, DMatrixRMaj[][] miniBatch, int n) {
+    private void updateMinibatch(NetworkFunctions function, int regularizationType, double lambda, double eta, DMatrixRMaj[][] miniBatch, int n) {
 
         DMatrixRMaj[] matrixMinibatch = matrixizeMinibatch(miniBatch);
 
-        DMatrixRMaj[][] deltas = backprop(matrixMinibatch[0], matrixMinibatch[1]);
+        DMatrixRMaj[][] deltas = backprop(function, matrixMinibatch[0], matrixMinibatch[1]);
 
         for (int i = 0; i < numLayers - 1; i++) {
             CommonOps_DDRM.scale(eta/ (double) miniBatch.length, deltas[0][i]);
@@ -148,7 +150,7 @@ public class Network {
         }
     }
 
-    private DMatrixRMaj[][] backprop(DMatrixRMaj input, DMatrixRMaj y) {
+    private DMatrixRMaj[][] backprop(NetworkFunctions function, DMatrixRMaj input, DMatrixRMaj y) {
 
         DMatrixRMaj[] layerError = new DMatrixRMaj[numLayers - 1];
         DMatrixRMaj[] errorW = new DMatrixRMaj[numLayers - 1];
@@ -167,8 +169,8 @@ public class Network {
 
         //forward pass
         for (int i = 1; i < numLayers; i++) {
-            zs[i - 1] = feedForwardOneLayerWithoutSigmoidMatrix(activations[i - 1], i - 1);
-            activations[i] = elementwiseSigmoidMatrix(zs[i - 1]);
+            zs[i - 1] = function.feedForwardOneLayerWithoutFunc(activations[i - 1], i - 1, weights, biases);
+            activations[i] = function.elementwiseFunc(zs[i - 1]);
         }
 
         CommonOps_DDRM.subtract(activations[numLayers - 1], y, layerError[numLayers - 2]);
@@ -183,58 +185,13 @@ public class Network {
 
             CommonOps_DDRM.multTransA(weights[i - 1], layerError[i - 1], t3);
 
-            layerError[i - 2] = hadamardMatrix(t3, elementwiseSigmoidPrimeMatrix(zs[i - 2]));
+            layerError[i - 2] = hadamardMatrix(t3, function.elementwiseDelta(zs[i - 2]));
 
             errorB[i - 2] = sumAllCols(layerError[i - 2]);
 
             CommonOps_DDRM.multTransB(layerError[i - 2], activations[i - 2], errorW[i - 2]);
         }
         return new DMatrixRMaj[][]{errorW, errorB};
-    }
-
-    /*private double cross(double) {
-
-    }*/
-
-    private double sigmoid(double n) {
-        return 1 / (1 + Math.exp(-n));
-        //return Math.max(n, 0);
-    }
-
-    private double sigmoidPrime(double n) {
-        double sig = sigmoid(n);
-        return sig*(1-sig);
-        //return n > 0 ? 1 : 0;
-    }
-
-    private DMatrixRMaj elementwiseSigmoidMatrix(DMatrixRMaj mat) {
-        DMatrixRMaj out = new DMatrixRMaj(mat.getNumRows(), mat.getNumCols());
-        int length = mat.data.length;
-
-        for (int i = 0; i < length; i++) {
-            out.data[i] = sigmoid(mat.data[i]);
-        }
-        return out;
-    }
-
-    private DMatrixRMaj elementwiseSigmoidPrimeMatrix(DMatrixRMaj mat) {
-        DMatrixRMaj out = new DMatrixRMaj(mat.getNumRows(), mat.getNumCols());
-        int length = mat.data.length;
-
-        for (int i = 0; i < length; i++) {
-            out.data[i] = sigmoidPrime(mat.data[i]);
-        }
-        return out;
-    }
-
-    private DMatrixRMaj hadamard(DMatrixRMaj a, DMatrixRMaj b) {
-        DMatrixRMaj mat = new DMatrixRMaj(a.getNumRows(), 1);
-
-        for (int i = 0; i < a.getNumRows(); i++) {
-            mat.set(i,0, a.get(i, 0)*b.get(i, 0));
-        }
-
-        return mat;
     }
 
     private DMatrixRMaj hadamardMatrix(DMatrixRMaj a, DMatrixRMaj b) {
@@ -246,32 +203,6 @@ public class Network {
         }
 
         return out;
-    }
-
-    public DMatrixRMaj feedForward(DMatrixRMaj input) {
-        DMatrixRMaj tempList = new DMatrixRMaj(input);
-
-        for (int i = 0; i < numLayers - 1; i++) {
-            DMatrixRMaj tempList2 = new DMatrixRMaj();
-
-            CommonOps_DDRM.mult(weights[i], tempList, tempList2);
-
-            CommonOps_DDRM.add(tempList2, biases[i], tempList2);
-
-            tempList = elementwiseSigmoidMatrix(tempList2);
-        }
-
-        return tempList;
-    }
-
-    private DMatrixRMaj feedForwardOneLayerWithoutSigmoidMatrix(DMatrixRMaj input, int layer) {
-        DMatrixRMaj tempList = new DMatrixRMaj();
-
-        CommonOps_DDRM.mult(weights[layer], input, tempList);
-
-        addVectorToAllCols(tempList, biases[layer]);
-
-        return tempList;
     }
 
     private int max(DMatrixRMaj mat) {
@@ -300,18 +231,6 @@ public class Network {
         }
 
         return out;
-    }
-
-    private void addVectorToCol(DMatrixRMaj mat, DMatrixRMaj vector, int col) {
-        for (int i = 0; i < vector.getNumRows(); i++) {
-            mat.set(i, col, mat.get(i, col) + vector.get(i, 0));
-        }
-    }
-
-    private void addVectorToAllCols(DMatrixRMaj mat, DMatrixRMaj vector) {
-        for (int i = 0; i < mat.getNumCols(); i++) {
-            addVectorToCol(mat, vector, i);
-        }
     }
 
     private DMatrixRMaj sumAllCols(DMatrixRMaj mat) {

@@ -6,12 +6,16 @@ import java.util.Arrays;
 import com.WCBinc.JavaNetwork.MnistReader.MnistConverter;
 import com.WCBinc.JavaNetwork.MnistReader.MnistDataReader;
 import com.WCBinc.JavaNetwork.MnistReader.MnistMatrix;
+import com.WCBinc.JavaNetwork.Network.Functions.ReLu;
+import com.WCBinc.JavaNetwork.Network.Functions.Sigmoid;
+import com.WCBinc.JavaNetwork.Network.Functions.Tanh;
 import com.WCBinc.JavaNetwork.Network.Network;
+import com.WCBinc.JavaNetwork.Network.NetworkFunctions;
 import org.ejml.data.DMatrixRMaj;
 
 public class Main {
     public static void main(String[] args) {
-        int[] l = {784, 100, 10};
+        int[] l = {784, 30, 10};
 
         Network n = new Network(l);
 
@@ -52,9 +56,8 @@ public class Main {
         DMatrixRMaj[][] valid = Arrays.copyOfRange(inputs, 50000, 60000);
         DMatrixRMaj[][] realinp = Arrays.copyOfRange(inputs, 0, 50000);
 
-        long time = System.currentTimeMillis();
-        //n.SGD(1,0.01, 0.0015, 10, 60, realinp, valid);
-        n.SGD(0,100, 0.1, 10, 60, realinp, valid);
-        System.out.println(System.currentTimeMillis() - time);
+        //long time = System.currentTimeMillis();
+        n.SGD(new NetworkFunctions(new ReLu()), true, 0, 1, 0.07, 10, 60, realinp, valid);
+        //System.out.println(System.currentTimeMillis() - time);
     }
 }
